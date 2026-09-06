@@ -20,11 +20,13 @@ const AT_BOTTOM = 2;
 const SCROLL_BOUNDARY_TOLERANCE = 2;
 
 function getScrollBoundary() {
+  const scrollElement = document.scrollingElement ?? document.documentElement;
+  const scrollTop = scrollElement.scrollTop;
   let boundary = 0;
-  if (window.scrollY <= SCROLL_BOUNDARY_TOLERANCE) boundary |= AT_TOP;
+  if (scrollTop <= SCROLL_BOUNDARY_TOLERANCE) boundary |= AT_TOP;
   if (
-    window.scrollY + window.innerHeight >=
-    document.documentElement.scrollHeight - SCROLL_BOUNDARY_TOLERANCE
+    scrollTop + scrollElement.clientHeight >=
+    scrollElement.scrollHeight - SCROLL_BOUNDARY_TOLERANCE
   ) {
     boundary |= AT_BOTTOM;
   }
@@ -32,12 +34,16 @@ function getScrollBoundary() {
 }
 
 function subscribeToScrollBoundary(onChange: () => void) {
+  const resizeObserver = new ResizeObserver(onChange);
+
   window.addEventListener("scroll", onChange, { passive: true });
   window.addEventListener("resize", onChange);
+  resizeObserver.observe(document.body);
 
   return () => {
     window.removeEventListener("scroll", onChange);
     window.removeEventListener("resize", onChange);
+    resizeObserver.disconnect();
   };
 }
 
@@ -71,12 +77,15 @@ export function StraightToc() {
     : undefined;
 
   useEffect(() => {
-    if (!activeAnchor || window.location.hash === `#${activeAnchor}`) return;
+    const nextHash = scrollBoundary & AT_TOP ? "" : activeAnchor;
+    if (nextHash === undefined) return;
 
     const url = new URL(window.location.href);
-    url.hash = activeAnchor;
+    url.hash = nextHash;
+    if (url.href === window.location.href) return;
+
     window.history.replaceState(window.history.state, "", url);
-  }, [activeAnchor]);
+  }, [activeAnchor, scrollBoundary]);
 
   if (items.length === 0) {
     return (
