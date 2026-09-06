@@ -3,12 +3,51 @@
 import { TOCItem } from "fumadocs-core/toc";
 import {
   TOCScrollArea,
-  useActiveAnchor,
   useItems,
   useTOCItems,
 } from "fumadocs-ui/components/toc";
 import { ChevronDown, Text } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+
+const AT_TOP = 1;
+const AT_BOTTOM = 2;
+const SCROLL_BOUNDARY_TOLERANCE = 2;
+
+function getScrollBoundary() {
+  let boundary = 0;
+  if (window.scrollY <= SCROLL_BOUNDARY_TOLERANCE) boundary |= AT_TOP;
+  if (
+    window.scrollY + window.innerHeight >=
+    document.documentElement.scrollHeight - SCROLL_BOUNDARY_TOLERANCE
+  ) {
+    boundary |= AT_BOTTOM;
+  }
+  return boundary;
+}
+
+function subscribeToScrollBoundary(onChange: () => void) {
+  window.addEventListener("scroll", onChange, { passive: true });
+  window.addEventListener("resize", onChange);
+
+  return () => {
+    window.removeEventListener("scroll", onChange);
+    window.removeEventListener("resize", onChange);
+  };
+}
+
+function useScrollBoundary() {
+  return useSyncExternalStore(
+    subscribeToScrollBoundary,
+    getScrollBoundary,
+    () => AT_TOP,
+  );
+}
 
 function itemIndent(depth: number) {
   if (depth <= 2) return 16;
@@ -18,7 +57,18 @@ function itemIndent(depth: number) {
 
 export function StraightToc() {
   const items = useTOCItems();
-  const activeAnchor = useActiveAnchor();
+  const trackedItems = useItems();
+  const scrollBoundary = useScrollBoundary();
+  const activeIndex =
+    scrollBoundary & AT_TOP
+      ? 0
+      : scrollBoundary & AT_BOTTOM
+        ? items.length - 1
+        : trackedItems.findIndex((item) => item.active);
+  const activeUrl = items[activeIndex]?.url;
+  const activeAnchor = activeUrl?.startsWith("#")
+    ? activeUrl.slice(1)
+    : undefined;
 
   useEffect(() => {
     if (!activeAnchor || window.location.hash === `#${activeAnchor}`) return;
@@ -60,13 +110,21 @@ export function StraightToc() {
 export function StraightTocMobile() {
   const items = useTOCItems();
   const trackedItems = useItems();
+  const scrollBoundary = useScrollBoundary();
   const [open, setOpen] = useState(false);
-  const selectedIndex = trackedItems.findIndex((item) => item.active);
-  const selectedItem = trackedItems[selectedIndex];
-  const lastActiveIndex = trackedItems.reduce(
+  const selectedIndex =
+    scrollBoundary & AT_TOP
+      ? 0
+      : scrollBoundary & AT_BOTTOM
+        ? items.length - 1
+        : trackedItems.findIndex((item) => item.active);
+  const selectedItem = items[selectedIndex];
+  const observedLastActiveIndex = trackedItems.reduce(
     (last, item, index) => (item.active ? index : last),
     -1,
   );
+  const lastActiveIndex =
+    scrollBoundary & AT_BOTTOM ? items.length - 1 : observedLastActiveIndex;
   const progress = (lastActiveIndex + 1) / Math.max(1, trackedItems.length);
 
   if (items.length === 0) return null;
@@ -85,9 +143,7 @@ export function StraightTocMobile() {
         >
           <ProgressCircle value={progress} />
           <span className="flex-1 truncate transition-colors">
-            {!open && selectedItem
-              ? selectedItem.original.title
-              : "On this page"}
+            {!open && selectedItem ? selectedItem.title : "On this page"}
           </span>
           <ChevronDown
             className={`size-4 transition-transform ${open ? "rotate-180" : ""}`}
@@ -149,17 +205,32 @@ function ProgressCircle({ value }: { value: number }) {
 function StraightTocItems({ onSelect }: { onSelect?: () => void }) {
   const items = useTOCItems();
   const trackedItems = useItems();
+  const scrollBoundary = useScrollBoundary();
   const containerRef = useRef<HTMLDivElement>(null);
   const [indicator, setIndicator] = useState({
     top: 0,
     bottom: 0,
     visible: false,
   });
-  const firstActiveIndex = trackedItems.findIndex((item) => item.active);
-  const lastActiveIndex = trackedItems.reduce(
+  const observedFirstActiveIndex = trackedItems.findIndex(
+    (item) => item.active,
+  );
+  const observedLastActiveIndex = trackedItems.reduce(
     (last, item, index) => (item.active ? index : last),
     -1,
   );
+  const firstActiveIndex =
+    scrollBoundary & AT_TOP
+      ? 0
+      : observedFirstActiveIndex === -1 && scrollBoundary & AT_BOTTOM
+        ? items.length - 1
+        : observedFirstActiveIndex;
+  const lastActiveIndex =
+    scrollBoundary & AT_BOTTOM
+      ? items.length - 1
+      : observedLastActiveIndex === -1 && scrollBoundary & AT_TOP
+        ? 0
+        : observedLastActiveIndex;
 
   useLayoutEffect(() => {
     const container = containerRef.current;
@@ -214,6 +285,11 @@ function StraightTocItems({ onSelect }: { onSelect?: () => void }) {
           href={item.url}
           onClick={onSelect}
           data-toc-index={index}
+          data-active={
+            trackedItems[index]?.active ||
+            (Boolean(scrollBoundary & AT_TOP) && index === 0) ||
+            (Boolean(scrollBoundary & AT_BOTTOM) && index === items.length - 1)
+          }
           style={{ paddingInlineStart: itemIndent(item.depth) }}
           className="relative py-1.5 pe-2 text-sm text-fd-muted-foreground transition-colors hover:text-fd-foreground data-[active=true]:text-fd-primary"
         >
