@@ -45,6 +45,12 @@ services:
     networks:
       - caddy-net
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
 networks:
   caddy-net:
