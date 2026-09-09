@@ -19,3 +19,7 @@
   width: fit-content;
   margin-inline: auto;
 }
+
+h5 {
+  font-weight: 500;
+}

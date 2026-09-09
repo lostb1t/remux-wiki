@@ -27,11 +27,17 @@ Self-hosting gives you full control and access to logs for troubleshooting.
 
 ---
 
-## Step 2: Configure Your AIOStreams Settings
+## Paths
+There are two paths forward: 
+You can use AIOStreams with debrid services and torrent based scrapers (addons), or you can use AIOStreams with the built-in usenet engine (NNTP), and configure NewzNab addons for your usenet indexers.
+
+**Note:** Both paths can be set up and used together.
+
+### Step 2a: Configure Your AIOStreams Settings (Debrid path)
 
 Navigate to the AIOStreams settings and configure the three essential components below:
 
-### A. Add a Debrid Provider (Mandatory)
+#### Add a Debrid Provider
 
 This provides access to cached torrents and streams.
 
@@ -43,48 +49,41 @@ This provides access to cached torrents and streams.
 
 ---
 
-### B. Enable a Search Addon (Required)
+#### Enable a Search Addon
 
 Add a search-capable addon to discover content.
 
-**Recommended options:**
+##### Recommended options
 - **TMDB** (via TMDB addon)
 - **AIOMetadata**
 
 ⚠️ **Important:** Do NOT use the TMDB Collections addon—use the standard TMDB addon instead.
 
-**Configuration steps:**
+##### Configuration steps
 1. Add your chosen search addon
 2. Enable the **search catalogs** in the addon settings
 3. Scroll down and confirm the **search function is enabled**
 
 ---
 
-### C. Add a Stream Provider Addon
+#### Add a Stream Provider Addon
 
 Add an addon that provides the actual streaming links.
 
-**Recommended options:**
+##### Recommended options
 - Comet
 - Mediafusion
 - Torrentio
 - Other stream-providing addons
 
-**Configuration steps:**
+##### Configuration steps
 1. Add your chosen provider addon
 2. Configure any required settings or API keys
 3. Ensure the addon is enabled
 
 ---
 
-## Configuration Tips
-
-### Less is More
-- **Don't overload** with multiple addons and catalogs
-- Start with one search addon and one stream provider
-- Add more only if needed for better results
-
-### Quick Start: Use a Pre-Built Config
+#### Quick Start: Use a Pre-Built Config
 Import the starter configuration to skip manual setup:
 
 ```
@@ -99,16 +98,31 @@ https://github.com/lostb1t/Gelato/blob/6c5c749ebae7787fe886f2580b959dea17190ac2/
 
 ---
 
-## Summary Checklist
+### Step 2b: Configure Your AIOStreams Settings (Usenet path)
 
-<div className="flex flex-col gap-2">
-  <label><input type="checkbox" className="mr-2" />AIOStreams manifest configured (public or self-hosted)</label>
-  <label><input type="checkbox" className="mr-2" />Debrid provider added and token entered</label>
-  <label><input type="checkbox" className="mr-2" />Search addon enabled (TMDB or AIOMetadata)</label>
-  <label><input type="checkbox" className="mr-2" />Search catalogs enabled in addon settings</label>
-  <label><input type="checkbox" className="mr-2" />Stream provider addon added and enabled</label>
-  <label><input type="checkbox" className="mr-2" />(Optional) Pre-built config imported and Debrid provider re-enabled</label>
+**Note:** This path requires you to self host AIOStreams, or use a paid instance on Elfhosted.
+
+#### Set up the usenet engine
+
+Log into the dashboard part of AIOStreams using your (AIOStreams auth) username and password.
+Go to *usenet > providers* and set up your NNTP providers.
+
+#### Set up user-agent overrides (for indexers)
+
+Go to *dashboard > settings > outbound requests > request header overrides*, and set the following overrides:
+
+<div className="w-full max-w-xxl mx-auto">
+![Usenet (indexer) User-Agents](/usenet-uas.webp) 
 </div>
+
+#### Enable AIOStreams service
+
+In the configure section of AIOStreams (user config):
+Go to *services*, and activate the AIOStreams service. You have to input your AIOStreams auth.
+
+#### Add a NewzNab addon
+
+Go to the addons section (in your user config), and add the built-in NewzNab addon. Then input your usenet indexer settings. It's recommended to explicitly pick AIOStreams in the *service* picker.
 
 ---
 
