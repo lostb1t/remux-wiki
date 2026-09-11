@@ -20,6 +20,10 @@
   margin-inline: auto;
 }
 
+h4 {
+  @apply text-lg;
+}
+
 h5 {
-  font-weight: 500;
+  @apply font-medium;
 }
