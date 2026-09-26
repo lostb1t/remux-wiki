@@ -66,8 +66,9 @@ sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
 sudo ufw allow 443/udp
 ```
-
+<Callout type="warning" title="Heads up">
 If UFW is not already enabled, allow SSH before enabling it so you do not lock yourself out of the server:
+</Callout>
 
 ```bash title="bash (terminal)"
 sudo ufw allow OpenSSH
